@@ -64,8 +64,8 @@ export function AppSidebar() {
           <Image
             src="/logo-only.png"
             alt="tideOS"
-            width={160}
-            height={87}
+            width={100}
+            height={54}
             priority
           />
         </Link>
