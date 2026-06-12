@@ -4,10 +4,7 @@ import {
   query, 
   where, 
   getDocs, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  deleteDoc,
+  addDoc,
   orderBy,
   Timestamp
 } from "firebase/firestore";

@@ -6,8 +6,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  doc, 
-  deleteDoc,
+  doc,
   orderBy,
   Timestamp
 } from "firebase/firestore";
@@ -55,7 +54,7 @@ export function useCreateTask() {
       const docRef = await addDoc(collection(db, "tasks"), {
         ...newTask,
         userId: user.uid,
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
       });
 
       return { id: docRef.id, ...newTask };
@@ -72,7 +71,7 @@ export function useUpdateTask() {
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Task> & { id: string }) => {
       const docRef = doc(db, "tasks", id);
-      await updateDoc(docRef, { ...data, updatedAt: new Date() });
+      await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
       return { id, ...data };
     },
     onSuccess: () => {

@@ -30,6 +30,12 @@ export function ProjectForm({ onSuccess }: { onSuccess: () => void }) {
       return;
     }
     
+    const parsedPriority = parseInt(priority);
+    if (!name.trim() || isNaN(parsedPriority) || parsedPriority < 1 || parsedPriority > 5) {
+      toast.error("Preencha todos os campos corretamente.");
+      return;
+    }
+
     try {
       await createProject.mutateAsync({
         name,
@@ -38,9 +44,9 @@ export function ProjectForm({ onSuccess }: { onSuccess: () => void }) {
         status,
         finalGoal,
         seasonId: season.id,
-        priority: parseInt(priority),
+        priority: parsedPriority,
         startDate: Timestamp.now(),
-        endDate: Timestamp.now(), // Placeholder
+        endDate: Timestamp.fromDate(new Date(season.year, season.trimestre * 3, 0)),
       });
       
       toast.success("Projeto criado com sucesso!");

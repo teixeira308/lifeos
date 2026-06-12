@@ -19,10 +19,10 @@ export function TaskForm({ onSuccess, defaultProjectId }: { onSuccess: () => voi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if atomic (very simple check: more than 3 words)
     const wordCount = title.trim().split(/\s+/).length;
     if (wordCount < 2) {
       toast.warning("Tente ser mais específico na sua tarefa (pelo menos 2 palavras).");
+      return;
     }
 
     try {
@@ -38,6 +38,7 @@ export function TaskForm({ onSuccess, defaultProjectId }: { onSuccess: () => voi
       setTitle("");
       onSuccess();
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao adicionar tarefa.");
     }
   };

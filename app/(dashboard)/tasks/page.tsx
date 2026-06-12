@@ -32,6 +32,7 @@ export default function TasksPage() {
     try {
       await updateTask.mutateAsync({ id, status: newStatus });
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao atualizar tarefa.");
     }
   };

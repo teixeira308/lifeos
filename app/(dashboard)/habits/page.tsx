@@ -40,6 +40,7 @@ export default function HabitsPage() {
         completed: !currentCompleted
       });
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao atualizar hábito.");
     }
   };
@@ -52,6 +53,7 @@ export default function HabitsPage() {
       setNewHabitName("");
       setIsDialogOpen(false);
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao criar hábito.");
     }
   };

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collection, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Project } from "@/types";
 import { useAuth } from "../auth/AuthContext";
@@ -28,7 +28,7 @@ export function useCreateProject() {
       const docRef = await addDoc(collection(db, "projects"), {
         ...newProject,
         userId: user.uid,
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
       });
 
       return { id: docRef.id, ...newProject };
@@ -66,7 +66,7 @@ export function useUpdateProject() {
       }
 
       const docRef = doc(db, "projects", id);
-      await updateDoc(docRef, { ...data, updatedAt: new Date() });
+      await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
       
       return { id, ...data };
     },

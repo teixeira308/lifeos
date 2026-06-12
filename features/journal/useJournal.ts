@@ -1,14 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  deleteDoc,
-  orderBy,
+  doc,
   Timestamp,
   setDoc,
   getDoc
@@ -59,10 +51,13 @@ export function useSaveJournalEntry() {
       const docId = `${user.uid}_${data.date}`;
       const docRef = doc(db, "journals", docId);
 
+      const existingSnap = await getDoc(docRef);
+      const existingCreatedAt = existingSnap.exists() ? existingSnap.data().createdAt : Timestamp.now();
+
       await setDoc(docRef, {
         ...data,
         userId: user.uid,
-        createdAt: Timestamp.now(),
+        createdAt: existingCreatedAt,
       }, { merge: true });
 
       return { id: docId, ...data };

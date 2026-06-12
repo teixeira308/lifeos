@@ -4,7 +4,6 @@ import {
   query, 
   where, 
   getDocs, 
-  orderBy, 
   limit,
   doc,
   getDoc

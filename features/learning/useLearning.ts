@@ -6,8 +6,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
-  doc, 
-  deleteDoc,
+  doc,
   orderBy,
   Timestamp
 } from "firebase/firestore";
@@ -58,7 +57,7 @@ export function useCreateLearningItem() {
       const docRef = await addDoc(collection(db, "learningItems"), {
         ...item,
         userId: user.uid,
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
       });
       return { id: docRef.id, ...item };
     },
@@ -74,7 +73,7 @@ export function useUpdateLearningItem() {
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<LearningItem> & { id: string }) => {
       const docRef = doc(db, "learningItems", id);
-      await updateDoc(docRef, { ...data, updatedAt: new Date() });
+      await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
       return { id, ...data };
     },
     onSuccess: () => {

@@ -40,23 +40,31 @@ export function SeasonForm({ onSuccess }: { onSuccess: () => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const parsedYear = parseInt(year);
+    const parsedTrimestre = parseInt(trimestre);
+
+    if (!name.trim() || !theme.trim() || isNaN(parsedYear) || parsedYear < 1900) {
+      toast.error("Preencha todos os campos corretamente.");
+      return;
+    }
+
     try {
       await createSeason.mutateAsync({
         name,
         theme,
-        trimestre: parseInt(trimestre),
-        year: parseInt(year),
+        trimestre: parsedTrimestre,
+        year: parsedYear,
         objectives: objectives.filter(o => o.trim() !== ""),
         notToDo: notToDo.filter(n => n.trim() !== ""),
-        startDate: Timestamp.now(), // Simplified
-        endDate: Timestamp.now(),   // Simplified
-        status: 'active'
+        startDate: Timestamp.fromDate(new Date(parsedYear, (parsedTrimestre - 1) * 3, 1)),
+        endDate: Timestamp.fromDate(new Date(parsedYear, parsedTrimestre * 3, 0))
       });
       
       toast.success("Temporada criada com sucesso!");
       onSuccess();
     } catch (error) {
-      toast.error("Erro ao criar temporada.");
+      console.error("Erro ao criar temporada:", error);
+      toast.error("Erro ao criar temporada. Tente novamente.");
     }
   };
 
@@ -76,7 +84,7 @@ export function SeasonForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Trimestre</Label>
-          <Select value={trimestre} onValueChange={(v) => setTrimestre(v ?? "")}>
+          <Select value={trimestre} onValueChange={(v) => setTrimestre(v ?? "1")}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o trimestre" />
             </SelectTrigger>

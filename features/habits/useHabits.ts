@@ -5,10 +5,8 @@ import {
   where, 
   getDocs, 
   addDoc, 
-  updateDoc, 
-  doc, 
-  deleteDoc,
-  orderBy,
+  updateDoc,
+  doc,
   Timestamp,
   setDoc
 } from "firebase/firestore";
@@ -89,22 +87,20 @@ export function useToggleHabit() {
       const logId = `${user.uid}_${habitId}_${dateStr}`;
       const logRef = doc(db, "habitLogs", logId);
 
+      if (completed) {
+        const habitRef = doc(db, "habits", habitId);
+
+        await updateDoc(habitRef, {
+          lastCompleted: Timestamp.now(),
+        });
+      }
+
       await setDoc(logRef, {
         userId: user.uid,
         habitId,
         date: dateStr,
         completed
       }, { merge: true });
-
-      // Update habit streak (simplified logic for now)
-      if (completed) {
-        const habitRef = doc(db, "habits", habitId);
-        // In a real app, you'd calculate the streak by checking consecutive logs
-        // Here we just increment for demo/simplicity
-        await updateDoc(habitRef, {
-          lastCompleted: Timestamp.now(),
-        });
-      }
 
       return { habitId, dateStr, completed };
     },
@@ -128,7 +124,7 @@ export function useCreateHabit() {
         frequency: 'daily',
         streak: 0,
         bestStreak: 0,
-        createdAt: new Date(),
+        createdAt: Timestamp.now(),
       });
       return { id: docRef.id, name };
     },

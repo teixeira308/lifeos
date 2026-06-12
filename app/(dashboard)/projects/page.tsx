@@ -32,6 +32,7 @@ export default function ProjectsPage() {
       await updateProject.mutateAsync({ id, status: newStatus });
       toast.success(`Projeto ${newStatus === 'active' ? 'ativado' : 'pausado'}!`);
     } catch (error) {
+      console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Erro ao atualizar projeto.";
       toast.error(errorMessage);
     }
@@ -42,6 +43,7 @@ export default function ProjectsPage() {
       await updateProject.mutateAsync({ id, status: 'completed' });
       toast.success("Projeto concluído! Parabéns!");
     } catch (error) {
+      console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Erro ao concluir projeto.";
       toast.error(errorMessage);
     }
