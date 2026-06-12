@@ -16,7 +16,7 @@ CLAUDE.md
 GEMINI.md
 
 # Root-level logo exports (public/ copies are tracked)
-logo*.png
+/logo*.png
 Gemini_Generated_Image*.png
 
 # dependencies
