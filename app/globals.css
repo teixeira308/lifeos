@@ -118,18 +118,6 @@
   --sidebar-ring: #0066FF;
 }
 
-@keyframes splash-glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 8px rgba(0, 102, 255, 0.3));
-  }
-  50% {
-    filter: drop-shadow(0 0 20px rgba(0, 102, 255, 0.6));
-  }
-}
-
-.animate-splash-glow {
-  animation: splash-glow 2s ease-in-out infinite;
-}
 
 @layer base {
   * {

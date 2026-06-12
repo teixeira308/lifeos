@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Sistema operacional pessoal baseado na metodologia Vida em M.",
   manifest: "/manifest.json",
   icons: {
-    apple: "/icon-192x192.png",
+    apple: "/logo-only.png",
   },
 };
 

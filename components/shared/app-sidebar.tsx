@@ -62,10 +62,10 @@ export function AppSidebar() {
       <SidebarHeader className="p-3">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logo-nome-direita.png"
-            alt="TideOS"
-            width={120}
-            height={65}
+            src="/logo-only.png"
+            alt="tideOS"
+            width={160}
+            height={87}
             priority
           />
         </Link>

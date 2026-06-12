@@ -36,12 +36,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="flex justify-center">
           <Image
-            src="/logo-nome-acima.png"
-            alt="TideOS"
-            width={160}
-            height={87}
+            src="/logo-only.png"
+            alt="tideOS"
+            width={280}
+            height={153}
             priority
-
           />
         </div>
         <Card>
