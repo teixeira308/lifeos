@@ -23,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning style={{ backgroundColor: '#0B0C10' }}>
-      <body className={`${jetbrainsMono.variable} antialiased bg-background`} style={{ backgroundColor: '#0B0C10' }}>
+    <html lang="pt-BR" suppressHydrationWarning style={{ backgroundColor: '#01050f' }}>
+      <body className={`${jetbrainsMono.variable} antialiased bg-background`} style={{ backgroundColor: '#01050f' }}>
         <Providers>{children}</Providers>
       </body>
     </html>

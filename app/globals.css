@@ -50,13 +50,13 @@
 
 :root,
 .dark {
-  --background: #0B0C10;
+  --background: #01050F;
   --foreground: #FFFFFF;
   --card: #16171D;
   --card-foreground: #FFFFFF;
   --popover: #16171D;
   --popover-foreground: #FFFFFF;
-  --primary: #0066FF;
+  --primary: #0065FE;
   --primary-foreground: #FFFFFF;
   --secondary: #16171D;
   --secondary-foreground: #FFFFFF;
@@ -67,21 +67,21 @@
   --destructive: #EF4444;
   --border: #4A5568;
   --input: #16171D;
-  --ring: #0066FF;
-  --chart-1: #0066FF;
+  --ring: #0065FE;
+  --chart-1: #0065FE;
   --chart-2: #4A5568;
   --chart-3: #16171D;
-  --chart-4: #0B0C10;
+  --chart-4: #01050F;
   --chart-5: #1E293B;
   --radius: 0.625rem;
-  --sidebar: #0B0C10;
+  --sidebar: #01050F;
   --sidebar-foreground: #FFFFFF;
-  --sidebar-primary: #0066FF;
+  --sidebar-primary: #0065FE;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #16171D;
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #4A5568;
-  --sidebar-ring: #0066FF;
+  --sidebar-ring: #0065FE;
 }
 
 
@@ -91,5 +91,8 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+  h1, h2, h3 {
+    @apply text-primary;
   }
 }
