@@ -62,10 +62,10 @@ export function AppSidebar() {
       <SidebarHeader className="p-3">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logo-only.png"
+            src="/logo-nome-direita.png"
             alt="tideOS"
-            width={100}
-            height={54}
+            width={120}
+            height={65}
             priority
           />
         </Link>
@@ -80,6 +80,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.title}
+                    className="data-active:bg-primary data-active:text-primary-foreground data-active:hover:bg-primary data-active:hover:text-primary-foreground"
                     render={<Link href={item.href}>
                       <item.icon className="size-4" />
                       <span>{item.title}</span>
