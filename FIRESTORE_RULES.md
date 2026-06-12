@@ -21,7 +21,8 @@ service cloud.firestore {
     // Generic rule for all user-owned data
     // Collections: seasons, projects, tasks, habits, habitLogs, journals, learningItems, resources, inboxItems
     match /{collectionName}/{docId} {
-      allow read, write: if isAuthenticated() && 
+      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.userId));
+      allow write: if isAuthenticated() && 
         (resource == null || isOwner(resource.data.userId)) &&
         (request.resource == null || isOwner(request.resource.data.userId));
     }

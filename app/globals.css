@@ -50,7 +50,7 @@
 
 :root,
 .dark {
-  --background: #01050F;
+  --background: #01030C;
   --foreground: #FFFFFF;
   --card: #16171D;
   --card-foreground: #FFFFFF;
@@ -71,10 +71,10 @@
   --chart-1: #0065FE;
   --chart-2: #4A5568;
   --chart-3: #16171D;
-  --chart-4: #01050F;
+  --chart-4: #01030C;
   --chart-5: #1E293B;
   --radius: 0.625rem;
-  --sidebar: #01050F;
+  --sidebar: #00010A;
   --sidebar-foreground: #FFFFFF;
   --sidebar-primary: #0065FE;
   --sidebar-primary-foreground: #FFFFFF;

@@ -64,8 +64,8 @@ export function AppSidebar() {
           <Image
             src="/logo-nome-direita.png"
             alt="tideOS"
-            width={120}
-            height={65}
+            width={160}
+            height={87}
             priority
           />
         </Link>
@@ -80,7 +80,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={item.title}
-                    className="data-active:bg-[#01050F] data-active:text-primary data-active:hover:bg-[#01050F] data-active:hover:text-primary"
+                    className="data-active:bg-[#00010A] data-active:text-primary data-active:hover:bg-[#00010A] data-active:hover:text-primary"
                     render={<Link href={item.href}>
                       <item.icon className="size-4" />
                       <span>{item.title}</span>

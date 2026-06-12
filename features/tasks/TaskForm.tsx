@@ -63,7 +63,9 @@ export function TaskForm({ onSuccess, defaultProjectId }: { onSuccess: () => voi
         <Label>Vincular a um Projeto (Opcional)</Label>
         <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "none")}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecione um projeto" />
+            <SelectValue>
+              {projectId === "none" ? "Sem projeto" : projects?.find(p => p.id === projectId)?.name || "Selecionar"}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Sem projeto</SelectItem>

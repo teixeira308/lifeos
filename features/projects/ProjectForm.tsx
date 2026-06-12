@@ -70,25 +70,26 @@ export function ProjectForm({ onSuccess }: { onSuccess: () => void }) {
         <Textarea id="proj-desc" value={description} onChange={e => setDescription(e.target.value)} placeholder="Explique a motivação..." required />
       </div>
 
+      <div className="space-y-2">
+        <Label>Grupo (Vida em M)</Label>
+        <Select value={group} onValueChange={(v) => setGroup(v as ProjectGroup)}>
+          <SelectTrigger>
+            <SelectValue>{group}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Sustento">Sustento</SelectItem>
+            <SelectItem value="Alma">Alma</SelectItem>
+            <SelectItem value="Curiosidade">Curiosidade</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Grupo (Vida em M)</Label>
-          <Select value={group} onValueChange={(v) => setGroup(v as ProjectGroup)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Sustento">Sustento (Trabalho/Carreira)</SelectItem>
-              <SelectItem value="Alma">Alma (Hobbies/Saúde/Fé)</SelectItem>
-              <SelectItem value="Curiosidade">Curiosidade (Interesses)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         <div className="space-y-2">
           <Label>Status Inicial</Label>
           <Select value={status} onValueChange={(v) => setStatus(v as ProjectStatus)}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{status === 'active' ? 'Ativo' : 'Pausado'}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="active">Ativo</SelectItem>

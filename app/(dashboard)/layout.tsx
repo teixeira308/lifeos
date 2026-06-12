@@ -42,11 +42,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <AppSidebar />
       </Suspense>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2">
+        <header className="relative flex h-16 shrink-0 items-center border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center">
             <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Image src="/logo-only.png" alt="tideOS" width={60} height={33} priority className="hidden md:block" />
+            <Separator orientation="vertical" className="ml-2 mr-2 h-4" />
+          </div>
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <Image src="/logo-only.png" alt="tideOS" width={64} height={35} priority />
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
