@@ -26,7 +26,8 @@ export default function RegisterPage() {
       await updateProfile(userCredential.user, { displayName: name });
       toast.success("Conta criada com sucesso!");
       router.push("/");
-    } catch (error: any) {
+    } catch (error) {
+      console.error(error);
       toast.error("Erro ao criar conta. Verifique os dados.");
     } finally {
       setLoading(false);

@@ -240,7 +240,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground leading-relaxed italic">
-                "O sucesso é a soma de pequenos esforços repetidos dia após dia. Foque no seu projeto de Sustento hoje."
+                &quot;O sucesso é a soma de pequenos esforços repetidos dia após dia. Foque no seu projeto de Sustento hoje.&quot;
               </p>
             </CardContent>
           </Card>

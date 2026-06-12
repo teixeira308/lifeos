@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useInboxItems, useCreateInboxItem, useDeleteInboxItem } from "@/features/inbox/useInbox";
+import { useInboxItems, useCreateInboxItem, useDeleteInboxItem, InboxItem } from "@/features/inbox/useInbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,6 @@ export default function InboxPage() {
   
   const [newTitle, setNewTitle] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [selectedItemTitle, setSelectedItemTitle] = useState("");
   const [selectedItemId, setSelectedItemId] = useState("");
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -37,6 +36,7 @@ export default function InboxPage() {
       toast.success("Capturado!");
       setNewTitle("");
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao capturar.");
     }
   };
@@ -46,12 +46,12 @@ export default function InboxPage() {
       await deleteItem.mutateAsync(id);
       toast.success("Item removido.");
     } catch (error) {
+      console.error(error);
       toast.error("Erro ao remover.");
     }
   };
 
-  const handleTransform = (item: any) => {
-    setSelectedItemTitle(item.title);
+  const handleTransform = (item: InboxItem) => {
     setSelectedItemId(item.id);
     setIsProjectDialogOpen(true);
   };
