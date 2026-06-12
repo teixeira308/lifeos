@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useActiveSeason } from "@/features/seasons/useSeasons";
+import { useDeleteSeason } from "@/features/seasons/useSeasonMutations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, Target, Ban, ArrowRight } from "lucide-react";
+import { Plus, Calendar, Target, Ban, ArrowRight, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -15,11 +16,36 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { SeasonForm } from "@/features/seasons/SeasonForm";
+import { Season } from "@/types";
+import { toast } from "sonner";
 
 export default function SeasonsPage() {
   const { data: season, isLoading } = useActiveSeason();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const deleteSeason = useDeleteSeason();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingSeason, setEditingSeason] = useState<Season | null>(null);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSeason.mutateAsync(id);
+      toast.success("Temporada removida.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao remover temporada.");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -39,7 +65,7 @@ export default function SeasonsPage() {
             Planeje seu trimestre e defina seus limites.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger render={<Button>
             <Plus className="mr-2 size-4" />
             Nova Temporada
@@ -52,11 +78,27 @@ export default function SeasonsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <SeasonForm onSuccess={() => setIsDialogOpen(false)} />
+              <SeasonForm onSuccess={() => setIsCreateDialogOpen(false)} />
             </div>
           </DialogContent>
         </Dialog>
       </header>
+
+      <Dialog open={!!editingSeason} onOpenChange={(open) => { if (!open) setEditingSeason(null); }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Temporada</DialogTitle>
+            <DialogDescription>
+              Atualize os dados da temporada atual.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {editingSeason && (
+              <SeasonForm season={editingSeason} onSuccess={() => setEditingSeason(null)} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {season ? (
         <div className="grid gap-6">
@@ -70,7 +112,28 @@ export default function SeasonsPage() {
                 <CardTitle className="text-4xl font-bold pt-2">{season.name}</CardTitle>
                 <CardDescription className="text-lg">{season.theme}</CardDescription>
               </div>
-              <Calendar className="size-12 text-primary/20" />
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setEditingSeason(season)}>
+                  <Pencil className="size-4" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-destructive">
+                    <Trash2 className="size-4" />
+                  </Button>} />
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir temporada?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        &quot;{season.name}&quot; será removida permanentemente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(season.id)}>Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardHeader>
             <CardContent className="grid gap-8 md:grid-cols-2 pt-6">
               <div className="space-y-4">
@@ -117,7 +180,7 @@ export default function SeasonsPage() {
           <CardDescription className="max-w-[400px] mt-2 mb-6">
             Temporadas são blocos de 3 meses focados em objetivos específicos. Comece planejando seu próximo trimestre.
           </CardDescription>
-          <Button onClick={() => setIsDialogOpen(true)}>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="mr-2 size-4" />
             Começar Agora
           </Button>

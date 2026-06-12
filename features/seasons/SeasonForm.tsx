@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateSeason } from "./useSeasonMutations";
+import { useCreateSeason, useUpdateSeason } from "./useSeasonMutations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,16 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
+import { Season } from "@/types";
 
-export function SeasonForm({ onSuccess }: { onSuccess: () => void }) {
-  const [name, setName] = useState("");
-  const [theme, setTheme] = useState("");
-  const [trimestre, setTrimestre] = useState("1");
-  const [year, setYear] = useState(new Date().getFullYear().toString());
-  const [objectives, setObjectives] = useState<string[]>([""]);
-  const [notToDo, setNotToDo] = useState<string[]>([""]);
+export function SeasonForm({ onSuccess, season }: { onSuccess: () => void; season?: Season }) {
+  const [name, setName] = useState(season?.name ?? "");
+  const [theme, setTheme] = useState(season?.theme ?? "");
+  const [trimestre, setTrimestre] = useState(season?.trimestre?.toString() ?? "1");
+  const [year, setYear] = useState(season?.year?.toString() ?? new Date().getFullYear().toString());
+  const [objectives, setObjectives] = useState<string[]>(season?.objectives?.length ? season.objectives : [""]);
+  const [notToDo, setNotToDo] = useState<string[]>(season?.notToDo?.length ? season.notToDo : [""]);
   
   const createSeason = useCreateSeason();
+  const updateSeason = useUpdateSeason();
 
   const handleAddObjective = () => setObjectives([...objectives, ""]);
   const handleRemoveObjective = (index: number) => setObjectives(objectives.filter((_, i) => i !== index));
@@ -49,22 +51,30 @@ export function SeasonForm({ onSuccess }: { onSuccess: () => void }) {
     }
 
     try {
-      await createSeason.mutateAsync({
+      const data = {
         name,
         theme,
         trimestre: parsedTrimestre,
         year: parsedYear,
         objectives: objectives.filter(o => o.trim() !== ""),
         notToDo: notToDo.filter(n => n.trim() !== ""),
-        startDate: Timestamp.fromDate(new Date(parsedYear, (parsedTrimestre - 1) * 3, 1)),
-        endDate: Timestamp.fromDate(new Date(parsedYear, parsedTrimestre * 3, 0))
-      });
-      
-      toast.success("Temporada criada com sucesso!");
+      };
+
+      if (season) {
+        await updateSeason.mutateAsync({ id: season.id, ...data });
+        toast.success("Temporada atualizada!");
+      } else {
+        await createSeason.mutateAsync({
+          ...data,
+          startDate: Timestamp.fromDate(new Date(parsedYear, (parsedTrimestre - 1) * 3, 1)),
+          endDate: Timestamp.fromDate(new Date(parsedYear, parsedTrimestre * 3, 0))
+        });
+        toast.success("Temporada criada com sucesso!");
+      }
       onSuccess();
     } catch (error) {
-      console.error("Erro ao criar temporada:", error);
-      toast.error("Erro ao criar temporada. Tente novamente.");
+      console.error("Erro ao salvar temporada:", error);
+      toast.error("Erro ao salvar temporada. Tente novamente.");
     }
   };
 
@@ -144,8 +154,8 @@ export function SeasonForm({ onSuccess }: { onSuccess: () => void }) {
         </Button>
       </div>
 
-      <Button type="submit" className="w-full" disabled={createSeason.isPending}>
-        {createSeason.isPending ? "Criando..." : "Salvar Temporada"}
+      <Button type="submit" className="w-full" disabled={createSeason.isPending || updateSeason.isPending}>
+        {season ? (updateSeason.isPending ? "Salvando..." : "Atualizar Temporada") : (createSeason.isPending ? "Criando..." : "Salvar Temporada")}
       </Button>
     </form>
   );

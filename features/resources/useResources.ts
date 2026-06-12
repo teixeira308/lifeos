@@ -5,6 +5,9 @@ import {
   where, 
   getDocs, 
   addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
   orderBy,
   Timestamp
 } from "firebase/firestore";
@@ -56,6 +59,35 @@ export function useCreateResource() {
         createdAt: Timestamp.now(),
       });
       return { id: docRef.id, ...item };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
+    },
+  });
+}
+
+export function useUpdateResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<Resource> & { id: string }) => {
+      const docRef = doc(db, "resources", id);
+      await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
+      return { id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
+    },
+  });
+}
+
+export function useDeleteResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, "resources", id));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["resources"] });

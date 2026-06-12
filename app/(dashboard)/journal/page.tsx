@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useJournalEntry, useSaveJournalEntry, JournalEntry } from "@/features/journal/useJournal";
+import { useJournalEntry, useSaveJournalEntry, useDeleteJournalEntry, JournalEntry } from "@/features/journal/useJournal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,13 +10,25 @@ import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, subDays, addDays, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Save, Smile, Zap, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Smile, Zap, Heart, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-function JournalEditor({ entry, date, onSave, isSaving }: { 
+function JournalEditor({ entry, date, onSave, onDelete, isSaving }: { 
   entry: JournalEntry | null; 
   date: Date; 
   onSave: (data: Omit<JournalEntry, 'id' | 'userId' | 'createdAt'>) => Promise<unknown>;
+  onDelete: () => Promise<unknown>;
   isSaving: boolean;
 }) {
   const [content, setContent] = useState(entry?.content || "");
@@ -49,10 +61,31 @@ function JournalEditor({ entry, date, onSave, isSaving }: {
             Reflexão diária para clareza e gratidão.
           </p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="mr-2 size-4" />
-          {isSaving ? "Salvando..." : "Salvar"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {entry && (
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="outline" size="icon" className="text-destructive">
+                <Trash2 className="size-4" />
+              </Button>} />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir entrada do diário?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>Excluir</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Button onClick={handleSave} disabled={isSaving}>
+            <Save className="mr-2 size-4" />
+            {isSaving ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
       </header>
 
       <div className="grid gap-6">
@@ -146,6 +179,7 @@ export default function JournalPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const { data: entry, isLoading } = useJournalEntry(selectedDate);
   const saveEntry = useSaveJournalEntry();
+  const deleteEntry = useDeleteJournalEntry();
 
   return (
     <div className="space-y-8 pb-10 max-w-4xl mx-auto">
@@ -182,6 +216,10 @@ export default function JournalPage() {
           entry={entry ?? null} 
           date={selectedDate}
           onSave={(data) => saveEntry.mutateAsync(data)}
+          onDelete={async () => {
+            await deleteEntry.mutateAsync(format(selectedDate, "yyyy-MM-dd"));
+            toast.success("Entrada removida.");
+          }}
           isSaving={saveEntry.isPending}
         />
       )}

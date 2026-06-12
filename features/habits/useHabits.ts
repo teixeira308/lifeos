@@ -6,6 +6,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc,
+  deleteDoc,
   doc,
   Timestamp,
   setDoc
@@ -127,6 +128,35 @@ export function useCreateHabit() {
         createdAt: Timestamp.now(),
       });
       return { id: docRef.id, name };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["habits"] });
+    },
+  });
+}
+
+export function useUpdateHabit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const habitRef = doc(db, "habits", id);
+      await updateDoc(habitRef, { name, updatedAt: Timestamp.now() });
+      return { id, name };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["habits"] });
+    },
+  });
+}
+
+export function useDeleteHabit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, "habits", id));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["habits"] });

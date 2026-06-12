@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collection, addDoc, updateDoc, doc, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Project } from "@/types";
 import { useAuth } from "../auth/AuthContext";
@@ -69,6 +69,20 @@ export function useUpdateProject() {
       await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
       
       return { id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activeProjects"] });
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, "projects", id));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activeProjects"] });

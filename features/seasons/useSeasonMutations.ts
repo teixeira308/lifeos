@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { collection, doc, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { collection, doc, deleteDoc, updateDoc, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Season } from "@/types";
 import { useAuth } from "../auth/AuthContext";
@@ -36,6 +36,37 @@ export function useCreateSeason() {
       await batch.commit();
 
       return { id: newDocRef.id, ...newSeason };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activeSeason"] });
+    },
+  });
+}
+
+export function useUpdateSeason() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<Season> & { id: string }) => {
+      if (!user) throw new Error("User not authenticated");
+      const docRef = doc(db, "seasons", id);
+      await updateDoc(docRef, data);
+      return { id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activeSeason"] });
+    },
+  });
+}
+
+export function useDeleteSeason() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, "seasons", id));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activeSeason"] });

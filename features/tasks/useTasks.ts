@@ -6,6 +6,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   doc,
   orderBy,
   Timestamp
@@ -73,6 +74,20 @@ export function useUpdateTask() {
       const docRef = doc(db, "tasks", id);
       await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
       return { id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, "tasks", id));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

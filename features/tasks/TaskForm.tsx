@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateTask } from "./useTasks";
+import { useCreateTask, useUpdateTask } from "./useTasks";
 import { useActiveProjects } from "../projects/useProjects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
+import { Task } from "@/types";
 
-export function TaskForm({ onSuccess, defaultProjectId }: { onSuccess: () => void, defaultProjectId?: string }) {
-  const [title, setTitle] = useState("");
-  const [projectId, setProjectId] = useState(defaultProjectId || "none");
+export function TaskForm({ onSuccess, defaultProjectId, task }: { onSuccess: () => void, defaultProjectId?: string, task?: Task }) {
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [projectId, setProjectId] = useState(task?.projectId ?? defaultProjectId ?? "none");
   const { data: projects } = useActiveProjects();
   const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,20 +28,28 @@ export function TaskForm({ onSuccess, defaultProjectId }: { onSuccess: () => voi
     }
 
     try {
-      await createTask.mutateAsync({
-        title,
-        projectId: projectId === "none" ? undefined : projectId,
-        status: 'pending',
-        isAtomic: true,
-        date: Timestamp.now(),
-      });
-      
-      toast.success("Tarefa adicionada!");
+      if (task) {
+        await updateTask.mutateAsync({
+          id: task.id,
+          title,
+          projectId: projectId === "none" ? undefined : projectId,
+        });
+        toast.success("Tarefa atualizada!");
+      } else {
+        await createTask.mutateAsync({
+          title,
+          projectId: projectId === "none" ? undefined : projectId,
+          status: 'pending',
+          isAtomic: true,
+          date: Timestamp.now(),
+        });
+        toast.success("Tarefa adicionada!");
+      }
       setTitle("");
       onSuccess();
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao adicionar tarefa.");
+      toast.error("Erro ao salvar tarefa.");
     }
   };
 
@@ -76,8 +86,8 @@ export function TaskForm({ onSuccess, defaultProjectId }: { onSuccess: () => voi
         </Select>
       </div>
 
-      <Button type="submit" className="w-full" disabled={createTask.isPending}>
-        {createTask.isPending ? "Adicionando..." : "Adicionar Tarefa"}
+      <Button type="submit" className="w-full" disabled={createTask.isPending || updateTask.isPending}>
+        {task ? (updateTask.isPending ? "Salvando..." : "Atualizar Tarefa") : (createTask.isPending ? "Adicionando..." : "Adicionar Tarefa")}
       </Button>
     </form>
   );

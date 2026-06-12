@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCreateProject } from "./useProjectMutations";
+import { useCreateProject, useUpdateProject } from "./useProjectMutations";
 import { useActiveSeason } from "../seasons/useSeasons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,25 +10,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
-import { ProjectGroup, ProjectStatus } from "@/types";
+import { Project, ProjectGroup, ProjectStatus } from "@/types";
 
-export function ProjectForm({ onSuccess }: { onSuccess: () => void }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [group, setGroup] = useState<ProjectGroup>("Sustento");
-  const [status, setStatus] = useState<ProjectStatus>("active");
-  const [finalGoal, setFinalGoal] = useState("");
-  const [priority, setPriority] = useState("1");
+export function ProjectForm({ onSuccess, project }: { onSuccess: () => void; project?: Project }) {
+  const [name, setName] = useState(project?.name ?? "");
+  const [description, setDescription] = useState(project?.description ?? "");
+  const [group, setGroup] = useState<ProjectGroup>(project?.group ?? "Sustento");
+  const [status, setStatus] = useState<ProjectStatus>(project?.status ?? "active");
+  const [finalGoal, setFinalGoal] = useState(project?.finalGoal ?? "");
+  const [priority, setPriority] = useState(project?.priority?.toString() ?? "1");
   
   const { data: season } = useActiveSeason();
   const createProject = useCreateProject();
+  const updateProject = useUpdateProject();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!season) {
-      toast.error("Você precisa de uma temporada ativa para criar um projeto.");
-      return;
-    }
     
     const parsedPriority = parseInt(priority);
     if (!name.trim() || isNaN(parsedPriority) || parsedPriority < 1 || parsedPriority > 5) {
@@ -37,23 +34,39 @@ export function ProjectForm({ onSuccess }: { onSuccess: () => void }) {
     }
 
     try {
-      await createProject.mutateAsync({
-        name,
-        description,
-        group,
-        status,
-        finalGoal,
-        seasonId: season.id,
-        priority: parsedPriority,
-        startDate: Timestamp.now(),
-        endDate: Timestamp.fromDate(new Date(season.year, season.trimestre * 3, 0)),
-      });
-      
-      toast.success("Projeto criado com sucesso!");
+      if (project) {
+        await updateProject.mutateAsync({
+          id: project.id,
+          name,
+          description,
+          group,
+          status,
+          finalGoal,
+          priority: parsedPriority,
+        });
+        toast.success("Projeto atualizado!");
+      } else {
+        if (!season) {
+          toast.error("Você precisa de uma temporada ativa para criar um projeto.");
+          return;
+        }
+        await createProject.mutateAsync({
+          name,
+          description,
+          group,
+          status,
+          finalGoal,
+          seasonId: season.id,
+          priority: parsedPriority,
+          startDate: Timestamp.now(),
+          endDate: Timestamp.fromDate(new Date(season.year, season.trimestre * 3, 0)),
+        });
+        toast.success("Projeto criado com sucesso!");
+      }
       onSuccess();
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao criar projeto.";
+      const errorMessage = error instanceof Error ? error.message : "Erro ao salvar projeto.";
       toast.error(errorMessage);
     }
   };
@@ -109,8 +122,8 @@ export function ProjectForm({ onSuccess }: { onSuccess: () => void }) {
         <Input id="proj-priority" type="number" min="1" max="5" value={priority} onChange={e => setPriority(e.target.value)} />
       </div>
 
-      <Button type="submit" className="w-full" disabled={createProject.isPending}>
-        {createProject.isPending ? "Criando..." : "Salvar Projeto"}
+      <Button type="submit" className="w-full" disabled={createProject.isPending || updateProject.isPending}>
+        {project ? (updateProject.isPending ? "Salvando..." : "Atualizar Projeto") : (createProject.isPending ? "Criando..." : "Salvar Projeto")}
       </Button>
     </form>
   );

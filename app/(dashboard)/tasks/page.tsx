@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useTasks, useUpdateTask } from "@/features/tasks/useTasks";
+import { useTasks, useUpdateTask, useDeleteTask } from "@/features/tasks/useTasks";
 import { useActiveProjects } from "@/features/projects/useProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, CheckCircle2, Circle, ListTodo, Filter } from "lucide-react";
+import { Plus, CheckCircle2, Circle, ListTodo, Filter, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Dialog, 
@@ -16,16 +16,30 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { TaskForm } from "@/features/tasks/TaskForm";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Task } from "@/types";
 
 export default function TasksPage() {
   const [filterProjectId, setFilterProjectId] = useState("all");
   const { data: tasks, isLoading } = useTasks(filterProjectId === "all" ? undefined : filterProjectId);
   const { data: projects } = useActiveProjects();
   const updateTask = useUpdateTask();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const deleteTask = useDeleteTask();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const handleToggleTask = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'pending' ? 'completed' : 'pending';
@@ -34,6 +48,16 @@ export default function TasksPage() {
     } catch (error) {
       console.error(error);
       toast.error("Erro ao atualizar tarefa.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTask.mutateAsync(id);
+      toast.success("Tarefa removida.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao remover tarefa.");
     }
   };
 
@@ -60,7 +84,7 @@ export default function TasksPage() {
             Ações atômicas para mover o ponteiro.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger render={<Button>
             <Plus className="mr-2 size-4" />
             Nova Tarefa
@@ -73,11 +97,27 @@ export default function TasksPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <TaskForm onSuccess={() => setIsDialogOpen(false)} />
+              <TaskForm onSuccess={() => setIsCreateDialogOpen(false)} />
             </div>
           </DialogContent>
         </Dialog>
       </header>
+
+      <Dialog open={!!editingTask} onOpenChange={(open) => { if (!open) setEditingTask(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+            <DialogDescription>
+              Atualize os detalhes da tarefa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {editingTask && (
+              <TaskForm task={editingTask} onSuccess={() => setEditingTask(null)} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -109,7 +149,7 @@ export default function TasksPage() {
               {pendingTasks.length > 0 ? (
                 <div className="divide-y">
                   {pendingTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+                    <div key={task.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors group">
                       <Checkbox 
                         checked={false} 
                         onCheckedChange={() => handleToggleTask(task.id, task.status)} 
@@ -121,6 +161,28 @@ export default function TasksPage() {
                             PROJETO: {projects?.find(p => p.id === task.projectId)?.name || "---"}
                           </p>
                         )}
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon-xs" onClick={() => setEditingTask(task)}>
+                          <Pencil className="size-3" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger render={<Button variant="ghost" size="icon-xs" className="text-destructive">
+                            <Trash2 className="size-3" />
+                          </Button>} />
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                &quot;{task.title}&quot; será removida permanentemente.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(task.id)}>Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ))}

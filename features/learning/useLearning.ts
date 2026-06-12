@@ -6,6 +6,7 @@ import {
   getDocs, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   doc,
   orderBy,
   Timestamp
@@ -75,6 +76,20 @@ export function useUpdateLearningItem() {
       const docRef = doc(db, "learningItems", id);
       await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
       return { id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["learning"] });
+    },
+  });
+}
+
+export function useDeleteLearningItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteDoc(doc(db, "learningItems", id));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["learning"] });

@@ -3,6 +3,7 @@ import {
   doc,
   Timestamp,
   setDoc,
+  deleteDoc,
   getDoc
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -64,6 +65,23 @@ export function useSaveJournalEntry() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["journal", user?.uid, variables.date] });
+    },
+  });
+}
+
+export function useDeleteJournalEntry() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (date: string) => {
+      if (!user) throw new Error("User not authenticated");
+      const docId = `${user.uid}_${date}`;
+      await deleteDoc(doc(db, "journals", docId));
+      return date;
+    },
+    onSuccess: (_: unknown, date: string) => {
+      queryClient.invalidateQueries({ queryKey: ["journal", user?.uid, date] });
     },
   });
 }

@@ -5,6 +5,7 @@ import {
   where, 
   getDocs, 
   addDoc, 
+  updateDoc,
   doc, 
   deleteDoc,
   orderBy,
@@ -57,6 +58,21 @@ export function useCreateInboxItem() {
         createdAt: Timestamp.now(),
       });
       return { id: docRef.id, ...item };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+    },
+  });
+}
+
+export function useUpdateInboxItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<InboxItem> & { id: string }) => {
+      const docRef = doc(db, "inboxItems", id);
+      await updateDoc(docRef, { ...data, updatedAt: Timestamp.now() });
+      return { id, ...data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inbox"] });

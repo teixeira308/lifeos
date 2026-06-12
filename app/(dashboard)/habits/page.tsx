@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useHabits, useHabitLogs, useToggleHabit, useCreateHabit } from "@/features/habits/useHabits";
+import { useHabits, useHabitLogs, useToggleHabit, useCreateHabit, useUpdateHabit, useDeleteHabit, Habit } from "@/features/habits/useHabits";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Zap, Flame, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Zap, Flame, Trophy, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, addDays, subDays, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -17,6 +17,17 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
@@ -28,9 +39,13 @@ export default function HabitsPage() {
   const { data: logs, isLoading: loadingLogs } = useHabitLogs(selectedDate);
   const toggleHabit = useToggleHabit();
   const createHabit = useCreateHabit();
+  const updateHabit = useUpdateHabit();
+  const deleteHabit = useDeleteHabit();
   
   const [newHabitName, setNewHabitName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [editName, setEditName] = useState("");
 
   const handleToggle = async (habitId: string, currentCompleted: boolean) => {
     try {
@@ -55,6 +70,29 @@ export default function HabitsPage() {
     } catch (error) {
       console.error(error);
       toast.error("Erro ao criar hábito.");
+    }
+  };
+
+  const handleEditHabit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHabit || !editName.trim()) return;
+    try {
+      await updateHabit.mutateAsync({ id: editingHabit.id, name: editName });
+      toast.success("Hábito atualizado!");
+      setEditingHabit(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar hábito.");
+    }
+  };
+
+  const handleDeleteHabit = async (id: string) => {
+    try {
+      await deleteHabit.mutateAsync(id);
+      toast.success("Hábito removido.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao remover hábito.");
     }
   };
 
@@ -111,6 +149,30 @@ export default function HabitsPage() {
         </Dialog>
       </header>
 
+      <Dialog open={!!editingHabit} onOpenChange={(open) => { if (!open) setEditingHabit(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Hábito</DialogTitle>
+            <DialogDescription>
+              Atualize o nome do hábito.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditHabit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome do Hábito</Label>
+              <Input 
+                value={editName} 
+                onChange={e => setEditName(e.target.value)} 
+                required 
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={updateHabit.isPending}>
+              {updateHabit.isPending ? "Salvando..." : "Atualizar Hábito"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Date Navigation */}
       <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg">
         <Button variant="ghost" size="icon" onClick={() => setSelectedDate(subDays(selectedDate, 1))}>
@@ -136,7 +198,7 @@ export default function HabitsPage() {
             const isCompleted = log?.completed || false;
             
             return (
-              <Card key={habit.id} className={`${isCompleted ? 'bg-primary/5 border-primary/20' : ''} transition-colors`}>
+              <Card key={habit.id} className={`${isCompleted ? 'bg-primary/5 border-primary/20' : ''} transition-colors group`}>
                 <CardContent className="p-4 flex items-center gap-4">
                   <Checkbox 
                     id={`habit-${habit.id}`}
@@ -152,11 +214,31 @@ export default function HabitsPage() {
                       {habit.name}
                     </Label>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-orange-500">
-                      <Flame className="size-4 fill-orange-500" />
-                      <span className="text-sm font-bold">{habit.streak || 0}</span>
-                    </div>
+                  <div className="flex items-center gap-1 text-orange-500">
+                    <Flame className="size-4 fill-orange-500" />
+                    <span className="text-sm font-bold">{habit.streak || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon-xs" onClick={() => { setEditName(habit.name); setEditingHabit(habit); }}>
+                      <Pencil className="size-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="ghost" size="icon-xs" className="text-destructive">
+                        <Trash2 className="size-3" />
+                      </Button>} />
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir hábito?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            &quot;{habit.name}&quot; será removido permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteHabit(habit.id)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>

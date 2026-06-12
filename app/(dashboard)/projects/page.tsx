@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useActiveProjects } from "@/features/projects/useProjects";
-import { useUpdateProject } from "@/features/projects/useProjectMutations";
+import { useUpdateProject, useDeleteProject } from "@/features/projects/useProjectMutations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Briefcase, Pause, Play, CheckCircle, MoreVertical } from "lucide-react";
+import { Plus, Briefcase, Pause, Play, CheckCircle, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
@@ -16,15 +16,28 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ProjectForm } from "@/features/projects/ProjectForm";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProjectStatus } from "@/types";
+import { ProjectStatus, Project } from "@/types";
 
 export default function ProjectsPage() {
   const { data: projects, isLoading } = useActiveProjects();
   const updateProject = useUpdateProject();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const deleteProject = useDeleteProject();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const newStatus: ProjectStatus = currentStatus === 'active' ? 'paused' : 'active';
@@ -46,6 +59,16 @@ export default function ProjectsPage() {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Erro ao concluir projeto.";
       toast.error(errorMessage);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProject.mutateAsync(id);
+      toast.success("Projeto removido.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao remover projeto.");
     }
   };
 
@@ -72,7 +95,7 @@ export default function ProjectsPage() {
             Gerencie seus compromissos e mantenha o foco.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger render={<Button>
             <Plus className="mr-2 size-4" />
             Novo Projeto
@@ -85,11 +108,27 @@ export default function ProjectsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <ProjectForm onSuccess={() => setIsDialogOpen(false)} />
+              <ProjectForm onSuccess={() => setIsCreateDialogOpen(false)} />
             </div>
           </DialogContent>
         </Dialog>
       </header>
+
+      <Dialog open={!!editingProject} onOpenChange={(open) => { if (!open) setEditingProject(null); }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Projeto</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do projeto.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {editingProject && (
+              <ProjectForm project={editingProject} onSuccess={() => setEditingProject(null)} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="active" className="space-y-6">
         <TabsList>
@@ -123,13 +162,33 @@ export default function ProjectsPage() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="border-t pt-4 flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleToggleStatus(project.id, project.status)}>
-                      <Pause className="mr-2 size-3" /> Pausar
+                  <CardFooter className="border-t pt-4 flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => setEditingProject(project)}>
+                      <Pencil className="mr-1 size-3" /> Editar
                     </Button>
-                    <Button variant="default" size="sm" className="flex-1" onClick={() => handleComplete(project.id)}>
-                      <CheckCircle className="mr-2 size-3" /> Concluir
+                    <Button variant="outline" size="sm" onClick={() => handleToggleStatus(project.id, project.status)}>
+                      <Pause className="mr-1 size-3" /> Pausar
                     </Button>
+                    <Button variant="default" size="sm" onClick={() => handleComplete(project.id)}>
+                      <CheckCircle className="mr-1 size-3" /> Concluir
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-destructive ml-auto">
+                        <Trash2 className="size-4" />
+                      </Button>} />
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. O projeto &quot;{project.name}&quot; será removido permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(project.id)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </CardFooter>
                 </Card>
               ))}
@@ -157,10 +216,30 @@ export default function ProjectsPage() {
                     </div>
                     <CardTitle>{project.name}</CardTitle>
                   </CardHeader>
-                  <CardFooter className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleToggleStatus(project.id, project.status)}>
-                      <Play className="mr-2 size-3" /> Retomar
+                  <CardFooter className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => setEditingProject(project)}>
+                      <Pencil className="mr-1 size-3" /> Editar
                     </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleToggleStatus(project.id, project.status)}>
+                      <Play className="mr-1 size-3" /> Retomar
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="text-destructive ml-auto">
+                        <Trash2 className="size-4" />
+                      </Button>} />
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir projeto?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. O projeto &quot;{project.name}&quot; será removido permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(project.id)}>Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </CardFooter>
                 </Card>
               ))}

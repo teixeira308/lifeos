@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useResources, useCreateResource, Resource } from "@/features/resources/useResources";
+import { useResources, useCreateResource, useUpdateResource, useDeleteResource, Resource } from "@/features/resources/useResources";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Link as LinkIcon, FileText, Video, Book, Search, ExternalLink } from "lucide-react";
+import { Plus, Link as LinkIcon, FileText, Video, Book, Search, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,17 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -23,12 +34,19 @@ import { toast } from "sonner";
 export default function ResourcesPage() {
   const { data: resources, isLoading } = useResources();
   const createResource = useCreateResource();
+  const updateResource = useUpdateResource();
+  const deleteResource = useDeleteResource();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [type, setType] = useState<Resource['type']>("link");
+
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editType, setEditType] = useState<Resource['type']>("link");
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +65,41 @@ export default function ResourcesPage() {
       console.error(error);
       toast.error("Erro ao salvar recurso.");
     }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingResource) return;
+    try {
+      await updateResource.mutateAsync({
+        id: editingResource.id,
+        title: editTitle,
+        url: editUrl,
+        type: editType,
+      });
+      toast.success("Recurso atualizado!");
+      setEditingResource(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar recurso.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteResource.mutateAsync(id);
+      toast.success("Recurso removido.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao remover recurso.");
+    }
+  };
+
+  const openEdit = (res: Resource) => {
+    setEditTitle(res.title);
+    setEditUrl(res.url || "");
+    setEditType(res.type);
+    setEditingResource(res);
   };
 
   if (isLoading) {
@@ -126,6 +179,42 @@ export default function ResourcesPage() {
         </Dialog>
       </header>
 
+      <Dialog open={!!editingResource} onOpenChange={(open) => { if (!open) setEditingResource(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Recurso</DialogTitle>
+            <DialogDescription>Atualize os detalhes.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>URL / Link (Opcional)</Label>
+              <Input value={editUrl} onChange={e => setEditUrl(e.target.value)} placeholder="https://..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select value={editType} onValueChange={(v) => v && setEditType(v as Resource['type'])}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="link">Link</SelectItem>
+                  <SelectItem value="pdf">PDF / Documento</SelectItem>
+                  <SelectItem value="video">Vídeo</SelectItem>
+                  <SelectItem value="book">Livro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full" disabled={updateResource.isPending}>
+              {updateResource.isPending ? "Salvando..." : "Atualizar Recurso"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input 
@@ -149,14 +238,38 @@ export default function ResourcesPage() {
                 </div>
                 <CardTitle className="text-base line-clamp-1">{res.title}</CardTitle>
               </CardHeader>
-              <CardFooter>
-                {res.url ? (
-                  <Button variant="link" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary" render={<a href={res.url} target="_blank" rel="noopener noreferrer">
-                    Abrir recurso <ExternalLink className="ml-1 size-3" />
-                  </a>} />
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">Sem link disponível</span>
-                )}
+              <CardFooter className="flex items-center justify-between">
+                <div className="flex-1">
+                  {res.url ? (
+                    <Button variant="link" className="p-0 h-auto text-xs text-muted-foreground hover:text-primary" render={<a href={res.url} target="_blank" rel="noopener noreferrer">
+                      Abrir recurso <ExternalLink className="ml-1 size-3" />
+                    </a>} />
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">Sem link</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon-xs" onClick={() => openEdit(res)}>
+                    <Pencil className="size-3" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger render={<Button variant="ghost" size="icon-xs" className="text-destructive">
+                      <Trash2 className="size-3" />
+                    </Button>} />
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir recurso?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          &quot;{res.title}&quot; será removido permanentemente.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(res.id)}>Excluir</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardFooter>
             </Card>
           ))

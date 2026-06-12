@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useInboxItems, useCreateInboxItem, useDeleteInboxItem, InboxItem } from "@/features/inbox/useInbox";
+import { useInboxItems, useCreateInboxItem, useUpdateInboxItem, useDeleteInboxItem, InboxItem } from "@/features/inbox/useInbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Inbox, Plus, Trash2, Rocket, ArrowRight } from "lucide-react";
+import { Inbox, Plus, Trash2, Rocket, ArrowRight, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { 
@@ -22,11 +22,14 @@ import { ProjectForm } from "@/features/projects/ProjectForm";
 export default function InboxPage() {
   const { data: items, isLoading } = useInboxItems();
   const createItem = useCreateInboxItem();
+  const updateItem = useUpdateInboxItem();
   const deleteItem = useDeleteInboxItem();
   
   const [newTitle, setNewTitle] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [editingItem, setEditingItem] = useState<InboxItem | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +41,19 @@ export default function InboxPage() {
     } catch (error) {
       console.error(error);
       toast.error("Erro ao capturar.");
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem || !editTitle.trim()) return;
+    try {
+      await updateItem.mutateAsync({ id: editingItem.id, title: editTitle });
+      toast.success("Item atualizado!");
+      setEditingItem(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar.");
     }
   };
 
@@ -54,6 +70,11 @@ export default function InboxPage() {
   const handleTransform = (item: InboxItem) => {
     setSelectedItemId(item.id);
     setIsProjectDialogOpen(true);
+  };
+
+  const openEdit = (item: InboxItem) => {
+    setEditTitle(item.title);
+    setEditingItem(item);
   };
 
   if (isLoading) {
@@ -89,6 +110,24 @@ export default function InboxPage() {
         </Button>
       </form>
 
+      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Item</DialogTitle>
+            <DialogDescription>Atualize o texto capturado.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Texto</Label>
+              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full" disabled={updateItem.isPending}>
+              {updateItem.isPending ? "Salvando..." : "Atualizar"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid gap-4">
         {items && items.length > 0 ? (
           items.map((item) => (
@@ -101,6 +140,9 @@ export default function InboxPage() {
                   <p className="font-medium">{item.title}</p>
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon-xs" onClick={() => openEdit(item)}>
+                    <Pencil className="size-3" />
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleTransform(item)}>
                     <Rocket className="mr-2 size-3 text-primary" />
                     Virar Projeto

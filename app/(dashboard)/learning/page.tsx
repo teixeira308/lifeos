@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useLearningItems, useCreateLearningItem, useUpdateLearningItem, LearningItem } from "@/features/learning/useLearning";
+import { useLearningItems, useCreateLearningItem, useUpdateLearningItem, useDeleteLearningItem, LearningItem } from "@/features/learning/useLearning";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GraduationCap, Book, Video, FileText, ExternalLink, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Plus, GraduationCap, Book, Video, FileText, ExternalLink, PlayCircle, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Dialog, 
@@ -16,6 +16,17 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,11 +37,18 @@ export default function LearningPage() {
   const { data: items, isLoading } = useLearningItems();
   const createItem = useCreateLearningItem();
   const updateItem = useUpdateLearningItem();
+  const deleteItem = useDeleteLearningItem();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<LearningItem['category']>("Software");
   const [type, setType] = useState<LearningItem['type']>("course");
+
+  const [editingItem, setEditingItem] = useState<LearningItem | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState<LearningItem['category']>("Software");
+  const [editType, setEditType] = useState<LearningItem['type']>("course");
+  const [editLink, setEditLink] = useState("");
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +77,43 @@ export default function LearningPage() {
       console.error(error);
       toast.error("Erro ao atualizar progresso.");
     }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    try {
+      await updateItem.mutateAsync({
+        id: editingItem.id,
+        title: editTitle,
+        category: editCategory,
+        type: editType,
+        link: editLink || undefined,
+      });
+      toast.success("Item atualizado!");
+      setEditingItem(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar item.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteItem.mutateAsync(id);
+      toast.success("Item removido.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao remover item.");
+    }
+  };
+
+  const openEdit = (item: LearningItem) => {
+    setEditTitle(item.title);
+    setEditCategory(item.category);
+    setEditType(item.type);
+    setEditLink(item.link || "");
+    setEditingItem(item);
   };
 
   if (isLoading) {
@@ -145,6 +200,58 @@ export default function LearningPage() {
         </Dialog>
       </header>
 
+      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Estudo</DialogTitle>
+            <DialogDescription>Atualize os detalhes.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Título</Label>
+              <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <Select value={editCategory} onValueChange={(v) => v && setEditCategory(v as LearningItem['category'])}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Software">Software</SelectItem>
+                    <SelectItem value="English">Inglês</SelectItem>
+                    <SelectItem value="Music">Música</SelectItem>
+                    <SelectItem value="Theology">Teologia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={editType} onValueChange={(v) => v && setEditType(v as LearningItem['type'])}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="course">Curso</SelectItem>
+                    <SelectItem value="book">Livro</SelectItem>
+                    <SelectItem value="video">Vídeo</SelectItem>
+                    <SelectItem value="article">Artigo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Link (Opcional)</Label>
+              <Input value={editLink} onChange={e => setEditLink(e.target.value)} placeholder="https://..." />
+            </div>
+            <Button type="submit" className="w-full" disabled={updateItem.isPending}>
+              {updateItem.isPending ? "Salvando..." : "Atualizar"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="in_progress" className="space-y-6">
         <TabsList>
           <TabsTrigger value="in_progress">Em Progresso</TabsTrigger>
@@ -156,7 +263,7 @@ export default function LearningPage() {
           <TabsContent key={status} value={status} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               {items?.filter(item => item.status === status).map((item) => (
-                <Card key={item.id} className="relative overflow-hidden">
+                <Card key={item.id} className="relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between mb-1">
@@ -177,7 +284,7 @@ export default function LearningPage() {
                       <Progress value={item.progress} className="h-1.5" />
                     </div>
                   </CardContent>
-                  <CardFooter className="pt-0 flex gap-2">
+                  <CardFooter className="pt-0 flex gap-2 flex-wrap">
                     {item.status !== 'finished' && (
                       <div className="flex w-full gap-2">
                         <Button 
@@ -203,6 +310,28 @@ export default function LearningPage() {
                         <CheckCircle2 className="size-3" /> Concluído
                       </div>
                     )}
+                    <div className="flex w-full gap-1 pt-1 border-t mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon-xs" onClick={() => openEdit(item)}>
+                        <Pencil className="size-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger render={<Button variant="ghost" size="icon-xs" className="text-destructive">
+                          <Trash2 className="size-3" />
+                        </Button>} />
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir item?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              &quot;{item.title}&quot; será removido permanentemente.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item.id)}>Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
